@@ -150,11 +150,11 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
     cerr << "the number of color = " << k << endl;
 
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
-    cerr << "the sum of delta = " << calculate_score_delta(R, paint, old_color_count) << "  (before permutation)" << endl;
+    cerr << "the sum of delta = " << H * W - calculate_score_delta(R, paint, old_color_count) << "  (before permutation)" << endl;
     paint = permute_paint(R, C, k, paint, old_color_count);
     int delta = calculate_score_delta(R, paint, old_color_count);
-    ll score = 100000ll * k - H * W + delta;
-    cerr << "the sum of delta = " << delta << endl;
+    ll score = 100000ll * k + H * W - delta;
+    cerr << "the sum of delta = " << H * W - delta << endl;
     cerr << "the raw score = " << score << endl;
 
 #ifdef LOCAL
