@@ -1,20 +1,110 @@
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <vector>
+#include <bits/stdc++.h>
+#define REP(i, n) for (int i = 0; (i) < int(n); ++ (i))
+#define REP3(i, m, n) for (int i = (m); (i) < int(n); ++ (i))
+#define REP_R(i, n) for (int i = int(n) - 1; (i) >= 0; -- (i))
+#define REP3R(i, m, n) for (int i = int(n) - 1; (i) >= int(m); -- (i))
+#define ALL(x) begin(x), end(x)
 
+using ll = long long;
 using namespace std;
+template <class T> using reversed_priority_queue = priority_queue<T, vector<T>, greater<T> >;
+template <class T> inline void chmax(T & a, T const & b) { a = max(a, b); }
+template <class T> inline void chmin(T & a, T const & b) { a = min(a, b); }
+template <typename T> ostream & operator << (ostream & out, vector<T> const & xs) { REP (i, int(xs.size()) - 1) out << xs[i] << ' '; if (not xs.empty()) out << xs.back(); return out; }
+
+constexpr int MAX_H = 200;
+constexpr int MAX_W = 200;
+constexpr int MAX_R = 4000;
+constexpr int MAX_C = 5;
+
+vector<vector<int> > construct_graph(int H, int W, int R, vector<int> const & regions) {
+    vector<vector<int> > g(R);
+    auto func = [&](int z, int nz) {
+        if (regions[z] != regions[nz]) {
+            g[regions[z]].push_back(regions[nz]);
+            g[regions[nz]].push_back(regions[z]);
+        }
+    };
+    REP (y, H) REP (x, W) {
+        int z = y * W + x;
+        if (x + 1 < W) func(z, z + 1);
+        if (y + 1 < H) func(z, z + W);
+    }
+    REP (i, R) {
+        sort(ALL(g[i]));
+        g[i].erase(unique(ALL(g[i])), g[i].end());
+    }
+    return g;
+}
+
+vector<array<int, MAX_C> > count_old_colors(int HW, int R, vector<int> const & regions, vector<int> const & old_colors) {
+    vector<array<int, MAX_C> > cnt(R);
+    REP (z, HW) {
+        cnt[regions[z]][old_colors[z]] += 1;
+    }
+    return cnt;
+}
+
+int mex_destruct(vector<int> & xs) {
+    int y = 0;
+    sort(xs.rbegin(), xs.rend());
+    while (not xs.empty() and y >= xs.back()) {
+        if (y == xs.back()) ++ y;
+        xs.pop_back();
+    }
+    return y;
+}
+
+vector<int> color_greedy(int R, vector<vector<int> > const & g) {
+    vector<int> color(R, -1);
+    vector<int> used;
+    REP (i, R) {
+        for (int j : g[i]) if (color[j] != -1) {
+            used.push_back(color[j]);
+        }
+        color[i] = mex_destruct(used);
+        used.clear();
+    }
+    return color;
+}
+
+int calculate_score_delta(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+    int delta = 0;
+    REP (i, R) {
+        if (paint[i] < MAX_C) {
+            delta += old_color_count[i][paint[i]];
+        }
+    }
+    return delta;
+}
+
+vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
+    cerr << "H = " << H << endl;
+    cerr << "W = " << W << endl;
+    cerr << "R = " << R << endl;
+    cerr << "C = " << C << endl;
+
+    vector<vector<int> > g = construct_graph(H, W, R, regions);
+    vector<int> paint = color_greedy(R, g);
+    cerr << "paint = " << paint << endl;
+    int k = *max_element(ALL(paint)) + 1;
+    cerr << "the number of color = " << k << endl;
+
+    vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
+    int delta = calculate_score_delta(R, paint, old_color_count);
+    ll score = 100000ll * k - H * W + delta;
+    cerr << "the sum of delta = " << delta << endl;
+    cerr << "the raw score = " << score << endl;
+    return paint;
+}
+
 
 class MapRecoloring {
 public:
-    MapRecoloring() = default;
     vector<int> recolor(int H, vector<int> regions, vector<int> oldColors) {
-        // number of regions = max element in regions + 1
-        int reg = *max_element(regions.begin(), regions.end()) + 1;
-        vector<int> ret(reg);
-        for (int i = 0; i < reg; ++i) {
-            ret[i] = i;
-        }
-        return ret;
+        int W = regions.size() / H;
+        int R = *max_element(regions.begin(), regions.end()) + 1;
+        int C = *max_element(oldColors.begin(), oldColors.end()) + 1;
+        return solve(H, W, R, C, regions, oldColors);
     }
 };
