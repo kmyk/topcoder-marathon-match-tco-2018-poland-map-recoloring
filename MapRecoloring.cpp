@@ -84,9 +84,9 @@ vector<int> color_greedy(int R, vector<vector<int> > const & g, RandomEngine & g
     iota(ALL(order), 0);
     shuffle(ALL(order), gen);
     for (int i : order) {
-        int used = 0;
+        uint32_t used = 0;  // NOTE: C < 32 is assumed
         for (int j : g[i]) if (color[j] != -1) {
-            used |= 1 << color[j];
+            used |= 1u << color[j];
         }
         color[i] = __builtin_ctz(~ used);
     }
@@ -176,22 +176,21 @@ vector<int> permute_paint(int R, int C0, int C, vector<int> const & paint, vecto
  */
 template <class RandomEngine>
 int get_random_paintable_color(int r, int c, int C, vector<int> const & paint, vector<vector<int> > const & g, RandomEngine & gen) {
-    vector<bool> used(C);
-    if (c != -1) used[c] = true;
+    assert (C < 32);
+    uint32_t used = 0;
+    if (c != -1) used |= 1u << c;
     for (int j : g[r]) {
-        used[paint[j]] = true;
+        used |= 1u << paint[j];
     }
-    int cnt = count(ALL(used), 0);
+    int cnt = C - __builtin_popcount(used);
+    uint32_t unused = ~ used;
     if (cnt == 0) return -1;
     int nth = uniform_int_distribution<int>(0, cnt - 1)(gen);
-    int nc = 0;
     while (true) {
-        while (used[nc]) ++ nc;
-        if (not nth) break;
-        -- nth;
-        ++ nc;
+        int nc = unused & - unused;  // the lsb
+        if (nth -- == 0) return __builtin_ctz(nc);
+        unused &= ~ nc;
     }
-    return nc;
 }
 
 void remove_unused_colors(int R, int & C, vector<int> & paint) {
