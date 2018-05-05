@@ -12,6 +12,38 @@ template <class T> inline void chmax(T & a, T const & b) { a = max(a, b); }
 template <class T> inline void chmin(T & a, T const & b) { a = min(a, b); }
 template <typename T> ostream & operator << (ostream & out, vector<T> const & xs) { REP (i, int(xs.size()) - 1) out << xs[i] << ' '; if (not xs.empty()) out << xs.back(); return out; }
 
+class xor_shift_128 {
+public:
+    typedef uint32_t result_type;
+    xor_shift_128(uint32_t seed) {
+        set_seed(seed);
+    }
+    void set_seed(uint32_t seed) {
+        a = seed = 1812433253u * (seed ^ (seed >> 30));
+        b = seed = 1812433253u * (seed ^ (seed >> 30)) + 1;
+        c = seed = 1812433253u * (seed ^ (seed >> 30)) + 2;
+        d = seed = 1812433253u * (seed ^ (seed >> 30)) + 3;
+    }
+    uint32_t operator() () {
+        uint32_t t = (a ^ (a << 11));
+        a = b; b = c; c = d;
+        return d = (d ^ (d >> 19)) ^ (t ^ (t >> 8));
+    }
+    static constexpr uint32_t max() { return numeric_limits<result_type>::max(); }
+    static constexpr uint32_t min() { return numeric_limits<result_type>::min(); }
+private:
+    uint32_t a, b, c, d;
+};
+
+constexpr double ticks_per_sec = 2800000000;
+constexpr double ticks_per_sec_inv = 1.0 / ticks_per_sec;
+inline double rdtsc() { // in seconds
+    uint32_t lo, hi;
+    asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+    return (((uint64_t)hi << 32) | lo) * ticks_per_sec_inv;
+}
+constexpr int TLE = 10; // sec
+
 constexpr int MAX_H = 200;
 constexpr int MAX_W = 200;
 constexpr int MAX_R = 4000;
@@ -55,10 +87,14 @@ int mex_destruct(vector<int> & xs) {
     return y;
 }
 
-vector<int> color_greedy(int R, vector<vector<int> > const & g) {
+template <class RandomEngine>
+vector<int> color_greedy(int R, vector<vector<int> > const & g, RandomEngine & gen) {
     vector<int> color(R, -1);
     vector<int> used;
-    REP (i, R) {
+    vector<int> order(R);
+    iota(ALL(order), 0);
+    shuffle(ALL(order), gen);
+    for (int i : order) {
         for (int j : g[i]) if (color[j] != -1) {
             used.push_back(color[j]);
         }
@@ -139,6 +175,9 @@ vector<int> apply_permutation(vector<int> const & sigma, vector<int> xs) {
 }
 
 vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
+    double clock_begin = rdtsc();
+
+    // debug print
 #ifdef LOCAL
     ll seed = -1;
     if (getenv("SEED")) {
@@ -151,19 +190,37 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
     cerr << "R = " << R << endl;
     cerr << "C = " << C << endl;
 
+    xor_shift_128 gen(42);
     vector<vector<int> > g = construct_graph(H, W, R, regions);
-    vector<int> paint = color_greedy(R, g);
-    int k = *max_element(ALL(paint)) + 1;  // the number of color, smaller is better
-    cerr << "the number of color = " << k << endl;
-
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
-    cerr << "the sum of skipped = " << calculate_score_skipped(R, paint, old_color_count) << "  (before permutation)" << endl;
-    paint = permute_paint(R, C, k, paint, old_color_count);
-    int skipped = calculate_score_skipped(R, paint, old_color_count);  // the number of cells which skipped to paint, larger is better
-    ll score = 100000ll * k + H * W - skipped;  // smaller is better
+
+    vector<int> paint;
+    int k = INT_MAX;
+    int skipped = INT_MIN;
+    int iteration = 0;
+    for (; rdtsc() - clock_begin < 0.95 * TLE; ++ iteration) {
+        vector<int> paint1 = color_greedy(R, g, gen);
+        int k1 = *max_element(ALL(paint1)) + 1;
+        if (k1 < k) {
+            k = k1;
+            skipped = INT_MIN;
+        }
+        if (k1 == k) {
+            paint1 = permute_paint(R, C, k, paint1, old_color_count);
+            int skipped1 = calculate_score_skipped(R, paint1, old_color_count);
+            if (skipped < skipped1) {
+                skipped = skipped1;
+                paint = paint1;
+cerr << "k = " << k << ", skipped = " << skipped << endl;
+            }
+        }
+    }
+    ll score = 100000ll * k + H * W - skipped;
+
+    // debug print
+    cerr << "the number of color = " << k << endl;
     cerr << "the sum of skipped = " << skipped << endl;
     cerr << "the raw score = " << score << endl;
-
 #ifdef LOCAL
     if (seed != -1) {
         cerr << "{\"seed\":" << seed
@@ -171,12 +228,15 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
              << ",\"W\":" << W
              << ",\"R\":" << R
              << ",\"C\":" << C
-             << ",\"k\":" << k
-             << ",\"skipped\":" << skipped
-             << ",\"score\":" << score
+             << ",\"k\":" << k  // the number of color, smaller is better
+             << ",\"skipped\":" << skipped  // the number of cells which skipped to paint, larger is better
+             << ",\"score\":" << score  // smaller is better
+             << ",\"iteration\":" << iteration
+             << ",\"time\":" << rdtsc() - clock_begin
              << "}" << endl;
     }
 #endif
+
     return paint;
 }
 
