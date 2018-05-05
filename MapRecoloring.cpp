@@ -68,14 +68,14 @@ vector<int> color_greedy(int R, vector<vector<int> > const & g) {
     return color;
 }
 
-int calculate_score_delta(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
-    int delta = 0;
+int calculate_score_skipped(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+    int skipped = 0;
     REP (i, R) {
         if (paint[i] < MAX_C) {
-            delta += old_color_count[i][paint[i]];
+            skipped += old_color_count[i][paint[i]];
         }
     }
-    return delta;
+    return skipped;
 }
 
 vector<int> permute_paint(int R, int C, int k, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
@@ -139,6 +139,13 @@ vector<int> apply_permutation(vector<int> const & sigma, vector<int> xs) {
 }
 
 vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
+#ifdef LOCAL
+    ll seed = -1;
+    if (getenv("SEED")) {
+        seed = atoll(getenv("SEED"));
+    }
+    cerr << "seed = " << seed << endl;
+#endif
     cerr << "H = " << H << endl;
     cerr << "W = " << W << endl;
     cerr << "R = " << R << endl;
@@ -146,27 +153,26 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
 
     vector<vector<int> > g = construct_graph(H, W, R, regions);
     vector<int> paint = color_greedy(R, g);
-    int k = *max_element(ALL(paint)) + 1;
+    int k = *max_element(ALL(paint)) + 1;  // the number of color, smaller is better
     cerr << "the number of color = " << k << endl;
 
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
-    cerr << "the sum of delta = " << H * W - calculate_score_delta(R, paint, old_color_count) << "  (before permutation)" << endl;
+    cerr << "the sum of skipped = " << calculate_score_skipped(R, paint, old_color_count) << "  (before permutation)" << endl;
     paint = permute_paint(R, C, k, paint, old_color_count);
-    int delta = calculate_score_delta(R, paint, old_color_count);
-    ll score = 100000ll * k + H * W - delta;
-    cerr << "the sum of delta = " << H * W - delta << endl;
+    int skipped = calculate_score_skipped(R, paint, old_color_count);  // the number of cells which skipped to paint, larger is better
+    ll score = 100000ll * k + H * W - skipped;  // smaller is better
+    cerr << "the sum of skipped = " << skipped << endl;
     cerr << "the raw score = " << score << endl;
 
 #ifdef LOCAL
-    if (getenv("SEED")) {
-        ll seed = atoll(getenv("SEED"));
+    if (seed != -1) {
         cerr << "{\"seed\":" << seed
              << ",\"H\":" << H
              << ",\"W\":" << W
              << ",\"R\":" << R
              << ",\"C\":" << C
              << ",\"k\":" << k
-             << ",\"delta\":" << delta
+             << ",\"skipped\":" << skipped
              << ",\"score\":" << score
              << "}" << endl;
     }
