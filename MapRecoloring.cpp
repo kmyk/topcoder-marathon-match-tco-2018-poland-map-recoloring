@@ -250,13 +250,26 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         if (iteration % 100 == 0) t = rdtsc() - clock_begin;
         double temperature = 1 - t / TLE;
 
-        // shuffle non-target colors
-        int c = get_fewest_color(C, paint).first;
-        shuffle(ALL(order), gen);
-        for (int r : order) {
-            int nc = get_random_paintable_color(r, c, C, paint, g, gen);
-            if (nc != -1) {
-                paint[r] = nc;
+        if (iteration % 10 != 0 and C <= 7) {
+            // modify a cell
+            while (true) {
+                int r = uniform_int_distribution<int>(0, R - 1)(gen);
+                int nc = get_random_paintable_color(r, paint[r], C, paint, g, gen);
+                if (nc != -1) {
+                    paint[r] = nc;
+                    break;
+                }
+            }
+
+        } else {
+            // shuffle non-target colors
+            int c = get_fewest_color(C, paint).first;
+            shuffle(ALL(order), gen);
+            for (int r : order) {
+                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
+                if (nc != -1) {
+                    paint[r] = nc;
+                }
             }
         }
 
@@ -271,6 +284,9 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         if (C == prev_C and C <= 7) {
             int delta = Pc - prev_Pc;
             if (delta >= 0 or bernoulli_distribution(exp(0.1 * delta / temperature))(gen)) {
+#ifdef LOCAL
+                if (delta < 0) cerr << "badmove: " << prev_Pc << " -> " << Pc << " (" << delta << ", prob = " <<  exp(0.1 * delta / temperature) << ")" << endl;
+#endif
                 // nop
             } else {
                 paint = prev_paint;
