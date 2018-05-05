@@ -225,14 +225,10 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     vector<vector<int> > g = construct_graph(H, W, R, regions);
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
 
-    vector<int> paint = color_greedy(R, g, gen);
-    int C = get_C(paint);
-    int Pc = calculate_Pc(R, paint, old_color_count);
-
     vector<int> answer;
     int answer_C = INT_MAX;
     int answer_Pc = INT_MIN;
-    auto update_answer = [&]() {
+    auto update_answer = [&](vector<int> const & paint, int C, int Pc) {
         if (make_pair(- answer_C, answer_Pc) < make_pair(- C, Pc)) {
             answer = paint;
             answer_C = C;
@@ -240,12 +236,20 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             cerr << "C = " << answer_C << ", Pc = " << answer_Pc << endl;
         }
     };
-    update_answer();
+
+    vector<int> paint = color_greedy(R, g, gen);
+    int C = get_C(paint);
+    int Pc = calculate_Pc(R, paint, old_color_count);
+    update_answer(paint, C, Pc);
 
     ll iteration = 0;
+    double t = rdtsc() - clock_begin;
     vector<int> order(R);
     iota(ALL(order), 0);
-    for (; iteration % 100 != 0 or rdtsc() - clock_begin < 0.95 * TLE; ++ iteration) {
+    for (; t < 0.95 * TLE; ++ iteration) {
+        if (iteration % 100 == 0) t = rdtsc() - clock_begin;
+        double temperature = 1 - t / TLE;
+
         // shuffle non-target colors
         int c = get_fewest_color(C, paint).first;
         shuffle(ALL(order), gen);
@@ -257,10 +261,23 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         }
 
         // update
+        vector<int> prev_paint = paint;
+        int prev_C = C;
+        int prev_Pc = Pc;
+        remove_unused_colors(R, C, paint);
         paint = permute_paint(R, C0, C, paint, old_color_count);
         Pc = calculate_Pc(R, paint, old_color_count);
-        remove_unused_colors(R, C, paint);
-        update_answer();
+        update_answer(paint, C, Pc);
+        if (C == prev_C and C <= 7) {
+            int delta = Pc - prev_Pc;
+            if (delta >= 0 or bernoulli_distribution(exp(0.1 * delta / temperature))(gen)) {
+                // nop
+            } else {
+                paint = prev_paint;
+                C = prev_C;
+                Pc = prev_Pc;
+            }
+        }
     }
 
     // debug print
