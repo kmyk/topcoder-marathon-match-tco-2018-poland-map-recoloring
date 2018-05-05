@@ -118,10 +118,13 @@ int calculate_Pc(int R, vector<int> const & paint, vector<array<int, MAX_C> > co
     return Pc;
 }
 
-void prepare_color_regin_lookup(int R, int C, vector<int> const & paint, vector<vector<int> > & lookup) {
-    lookup.resize(C);
-    REP (c, C) lookup[c].clear();
-    REP (i, R) lookup[paint[i]].push_back(i);
+pair<int, int> get_fewest_color(int C, vector<int> const & paint) {
+    vector<int> cnt(C);
+    for (int c : paint) {
+        cnt[c] += 1;
+    }
+    int c = min_element(ALL(cnt)) - cnt.begin();
+    return make_pair(c, cnt[c]);
 }
 
 vector<int> permute_paint(int R, int C0, int C, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
@@ -202,23 +205,15 @@ int get_random_paintable_color(int r, int c, int C, vector<int> const & paint, v
     return nc;
 }
 
-void remove_an_unused_color(int unused_c, int R, int & C, vector<int> & paint, vector<vector<int> > & lookup) {
-    REP (r, R) {
-        assert (paint[r] != unused_c);
-        if (paint[r] > unused_c) paint[r] -= 1;
-    }
-    REP3 (c, unused_c, C - 1) {
-        lookup[c].swap(lookup[c + 1]);
-    }
-    lookup.pop_back();
-    C -= 1;
-}
-
-void remove_unused_colors(int R, int & C, vector<int> & paint, vector<vector<int> > & lookup) {
-    for (int c = 0; c < C; ++ c) {  // C may be modified in the loop
-        if (lookup[c].empty()) {
-            remove_an_unused_color(c, R, C, paint, lookup);
+void remove_unused_colors(int R, int & C, vector<int> & paint) {
+    while (true) {
+        int c, cnt; tie(c, cnt) = get_fewest_color(C, paint);
+        if (cnt) break;
+        REP (r, R) {
+            assert (paint[r] != c);
+            if (paint[r] > c) paint[r] -= 1;
         }
+        C -= 1;
     }
 }
 
@@ -245,7 +240,6 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     vector<int> paint = color_greedy(R, g, gen);
     int C = get_C(paint);
     int Pc = calculate_Pc(R, paint, old_color_count);
-    vector<vector<int> > lookup; prepare_color_regin_lookup(R, C, paint, lookup);
 
     vector<int> answer;
     int answer_C = INT_MAX;
@@ -261,40 +255,23 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     update_answer();
 
     ll iteration = 0;
+    vector<int> order(R);
+    iota(ALL(order), 0);
     for (; iteration % 100 != 0 or rdtsc() - clock_begin < 0.95 * TLE; ++ iteration) {
-        int c = min_element(ALL(lookup), [&](vector<int> const & a, vector<int> const & b) { return a.size() < b.size(); }) - lookup.begin();
-
-        if (iteration % 2 == 0) {
-            // shuffle non-target colors
-            vector<int> order(R);
-            iota(ALL(order), 0);
-            shuffle(ALL(order), gen);
-            for (int r : order) {
-                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
-                if (nc != -1) {
-                    paint[r] = nc;
-                }
-            }
-            // update
-            paint = permute_paint(R, C0, C, paint, old_color_count);
-            Pc = calculate_Pc(R, paint, old_color_count);
-            prepare_color_regin_lookup(R, C, paint, lookup);
-
-        } else {
-            // remove target color
-            for (int i = 0; i < (int)lookup[c].size(); ++ i) {  // lookup[c].size() may be modified in the loop
-                int r = lookup[c][i];
-                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
-                if (nc != -1) {
-                    paint[r] = nc;
-                    swap(lookup[c][i], lookup[c].back());
-                    lookup[c].pop_back();
-                    lookup[nc].push_back(r);
-                    -- i;
-                }
+        // shuffle non-target colors
+        int c = get_fewest_color(C, paint).first;
+        shuffle(ALL(order), gen);
+        for (int r : order) {
+            int nc = get_random_paintable_color(r, c, C, paint, g, gen);
+            if (nc != -1) {
+                paint[r] = nc;
             }
         }
-        remove_unused_colors(R, C, paint, lookup);
+
+        // update
+        paint = permute_paint(R, C0, C, paint, old_color_count);
+        Pc = calculate_Pc(R, paint, old_color_count);
+        remove_unused_colors(R, C, paint);
         update_answer();
     }
 
