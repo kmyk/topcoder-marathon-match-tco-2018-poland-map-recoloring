@@ -77,29 +77,18 @@ vector<array<int, MAX_C> > count_old_colors(int HW, int R, vector<int> const & r
     return cnt;
 }
 
-int mex_destruct(vector<int> & xs) {
-    int y = 0;
-    sort(xs.rbegin(), xs.rend());
-    while (not xs.empty() and y >= xs.back()) {
-        if (y == xs.back()) ++ y;
-        xs.pop_back();
-    }
-    return y;
-}
-
 template <class RandomEngine>
 vector<int> color_greedy(int R, vector<vector<int> > const & g, RandomEngine & gen) {
     vector<int> color(R, -1);
-    vector<int> used;
     vector<int> order(R);
     iota(ALL(order), 0);
     shuffle(ALL(order), gen);
     for (int i : order) {
+        int used = 0;
         for (int j : g[i]) if (color[j] != -1) {
-            used.push_back(color[j]);
+            used |= 1 << color[j];
         }
-        color[i] = mex_destruct(used);
-        used.clear();
+        color[i] = __builtin_ctz(~ used);
     }
     return color;
 }
