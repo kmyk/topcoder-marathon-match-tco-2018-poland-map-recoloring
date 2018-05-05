@@ -167,13 +167,6 @@ vector<int> permute_paint(int R, int C, int k, vector<int> const & paint, vector
     return npaint;
 }
 
-vector<int> apply_permutation(vector<int> const & sigma, vector<int> xs) {
-    for (int & x : xs) {
-        x = sigma[x];
-    }
-    return xs;
-}
-
 vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
     double clock_begin = rdtsc();
 
@@ -211,7 +204,7 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
             if (skipped < skipped1) {
                 skipped = skipped1;
                 paint = paint1;
-cerr << "k = " << k << ", skipped = " << skipped << endl;
+                cerr << "k = " << k << ", skipped = " << skipped << endl;
             }
         }
     }
