@@ -22,3 +22,8 @@ submit:
 	oj submit '${URL}' --language C++ ${PROBLEM}.cpp -y --open
 submit/full:
 	oj submit '${URL}' --language C++ ${PROBLEM}.cpp -y --open --full
+
+score: a.out tester.jar
+	for seed in $$(seq 1 20) ; do java -jar tester.jar -exec ./a.out -novis -seed $$seed | tee /dev/stderr | grep '{"seed":' >> score.txt ; done
+	echo seed H W R C k delta score | tr ' ' '\t'
+	cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C)\t\(.k)\t\(.delta)\t\(.score)"'

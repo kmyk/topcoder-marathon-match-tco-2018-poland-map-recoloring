@@ -156,6 +156,21 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
     ll score = 100000ll * k - H * W + delta;
     cerr << "the sum of delta = " << delta << endl;
     cerr << "the raw score = " << score << endl;
+
+#ifdef LOCAL
+    if (getenv("SEED")) {
+        ll seed = atoll(getenv("SEED"));
+        cerr << "{\"seed\":" << seed
+             << ",\"H\":" << H
+             << ",\"W\":" << W
+             << ",\"R\":" << R
+             << ",\"C\":" << C
+             << ",\"k\":" << k
+             << ",\"delta\":" << delta
+             << ",\"score\":" << score
+             << "}" << endl;
+    }
+#endif
     return paint;
 }
 
