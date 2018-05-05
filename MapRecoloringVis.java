@@ -200,8 +200,11 @@ public class MapRecoloringVis {
         if (vis) {
             SZX = W * SZ + 1;
             SZY = H * SZ + 1;
-            // draw the starting data
-            draw(false);
+            // skip if exists
+            if (! (new File("vis/" + fileName + "-in.png").exists())) {
+                // draw the starting data
+                draw(false);
+            }
         }
 
         if (proc != null) {
@@ -383,7 +386,8 @@ public class MapRecoloringVis {
         }
 
         try {
-            ImageIO.write(bi,"png", new File(fileName + (newC ? "-res" : "-in") + ".png"));
+            new File("vis").mkdirs();
+            ImageIO.write(bi,"png", new File("vis/" + fileName + (newC ? "-res" : "-in") + ".png"));
         } catch (Exception e) { e.printStackTrace(); }
     }
     // -----------------------------------------
