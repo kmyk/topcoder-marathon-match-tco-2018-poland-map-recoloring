@@ -78,6 +78,66 @@ int calculate_score_delta(int R, vector<int> const & paint, vector<array<int, MA
     return delta;
 }
 
+vector<int> permute_paint(int R, int C, int k, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+    // prepare delta[i][j]; it is the delta of score if color i becomes color j
+    vector<array<int, MAX_C> > delta(k);
+    REP (i, R) {
+        REP (j, C) {
+            delta[paint[i]][j] += old_color_count[i][j];
+        }
+    }
+    // try all permutations
+    vector<int> sigma(k);  // inverted
+    int highscore = INT_MIN;
+    vector<int> tau;
+    auto func = [&](int chosen) {
+        // permute C colors
+        REP (i, k) if (chosen & (1 << i)) {
+            tau.push_back(i);
+        }
+        do {
+            int score = 0;
+            REP (i, C) {
+                score += delta[tau[i]][i];  // since tau is inverted here
+            }
+            if (highscore < score) {
+                if ((int)tau.size() < k) {
+                    REP (i, k) if (not (chosen & (1 << i))) {
+                        tau.push_back(i);  // put remaining parts
+                    }
+                }
+                highscore = score;
+                sigma = tau;
+            }
+        } while (next_permutation(tau.begin(), tau.begin() + C));
+        tau.clear();
+    };
+    // choose C colors from k colors
+    for (int x = (1 << C) - 1; x < (1 << k); ) {  // enumerate x \subseteq k s.t. |x| = C
+        func(x);
+        // update x
+        int t = x | (x - 1);
+        x = (t + 1) | (((~ t & - ~ t) - 1) >> (__builtin_ctz(x) + 1));
+    }
+    // apply tau = sigma^{-1}
+    tau.resize(k, -1);
+    REP (i, k) {
+        tau[sigma[i]] = i;
+    }
+    vector<int> npaint(R);
+    REP (i, R) {
+        npaint[i] = tau[paint[i]];
+    }
+    return npaint;
+}
+
+vector<int> apply_permutation(vector<int> const & sigma, vector<int> xs) {
+    for (int & x : xs) {
+        x = sigma[x];
+    }
+    return xs;
+}
+
 vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
     cerr << "H = " << H << endl;
     cerr << "W = " << W << endl;
@@ -86,11 +146,12 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
 
     vector<vector<int> > g = construct_graph(H, W, R, regions);
     vector<int> paint = color_greedy(R, g);
-    cerr << "paint = " << paint << endl;
     int k = *max_element(ALL(paint)) + 1;
     cerr << "the number of color = " << k << endl;
 
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
+    cerr << "the sum of delta = " << calculate_score_delta(R, paint, old_color_count) << "  (before permutation)" << endl;
+    paint = permute_paint(R, C, k, paint, old_color_count);
     int delta = calculate_score_delta(R, paint, old_color_count);
     ll score = 100000ll * k - H * W + delta;
     cerr << "the sum of delta = " << delta << endl;
