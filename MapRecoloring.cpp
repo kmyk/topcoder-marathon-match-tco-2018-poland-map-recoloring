@@ -97,14 +97,14 @@ inline int get_C(vector<int> const & paint) {
     return *max_element(ALL(paint)) + 1;
 }
 
-int calculate_Pc(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
-    int Pc = 0;
+int calculate_P(int HW, int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+    int P = HW;
     REP (i, R) {
         if (paint[i] < MAX_C) {
-            Pc += old_color_count[i][paint[i]];
+            P -= old_color_count[i][paint[i]];
         }
     }
-    return Pc;
+    return P;
 }
 
 pair<int, int> get_fewest_color(int C, vector<int> const & paint) {
@@ -227,20 +227,20 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
 
     vector<int> answer;
     int answer_C = INT_MAX;
-    int answer_Pc = INT_MIN;
-    auto update_answer = [&](vector<int> const & paint, int C, int Pc) {
-        if (make_pair(- answer_C, answer_Pc) < make_pair(- C, Pc)) {
+    int answer_P = INT_MIN;
+    auto update_answer = [&](vector<int> const & paint, int C, int P) {
+        if (make_pair(C, P) < make_pair(answer_C, answer_P)) {
             answer = paint;
             answer_C = C;
-            answer_Pc = Pc;
-            cerr << "C = " << answer_C << ", Pc = " << answer_Pc << endl;
+            answer_P = P;
+            cerr << "C = " << answer_C << ", P = " << answer_P << endl;
         }
     };
 
     vector<int> paint = color_greedy(R, g, gen);
     int C = get_C(paint);
-    int Pc = calculate_Pc(R, paint, old_color_count);
-    update_answer(paint, C, Pc);
+    int P = calculate_P(H * W, R, paint, old_color_count);
+    update_answer(paint, C, P);
 
     ll iteration = 0;
     double t = rdtsc() - clock_begin;
@@ -276,30 +276,27 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         // update
         vector<int> prev_paint = paint;
         int prev_C = C;
-        int prev_Pc = Pc;
+        int prev_P = P;
         remove_unused_colors(R, C, paint);
         paint = permute_paint(R, C0, C, paint, old_color_count);
-        Pc = calculate_Pc(R, paint, old_color_count);
-        update_answer(paint, C, Pc);
+        P = calculate_P(H * W, R, paint, old_color_count);
+        update_answer(paint, C, P);
         if (C == prev_C and C <= 7) {
-            int delta = Pc - prev_Pc;
+            int delta = P - prev_P;
             if (delta >= 0 or bernoulli_distribution(exp(0.1 * delta / temperature))(gen)) {
-#ifdef LOCAL
-                if (delta < 0) cerr << "badmove: " << prev_Pc << " -> " << Pc << " (" << delta << ", prob = " <<  exp(0.1 * delta / temperature) << ")" << endl;
-#endif
                 // nop
             } else {
                 paint = prev_paint;
                 C = prev_C;
-                Pc = prev_Pc;
+                P = prev_P;
             }
         }
     }
 
     // debug print
-    ll score = 100000ll * answer_C + H * W - answer_Pc;
+    ll score = 100000ll * answer_C + answer_P;
     cerr << "color = " << C << endl;
-    cerr << "P^c = " << answer_Pc << endl;
+    cerr << "P^c = " << answer_P << endl;
     cerr << "raw score = " << score << endl;
 #ifdef LOCAL
     if (seed != -1) {
@@ -309,8 +306,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
              << ",\"R\":" << R
              << ",\"C0\":" << C0
              << ",\"C\":" << answer_C  // the number of color, smaller is better
-             << ",\"P\":" << H * W - answer_Pc  // the number of cells painted, smaller is better
-             << ",\"Pc\":" << answer_Pc
+             << ",\"P\":" << answer_P  // the number of cells painted, smaller is better
              << ",\"rawScore\":" << score
              << ",\"iteration\":" << iteration
              << ",\"time\":" << rdtsc() - clock_begin
