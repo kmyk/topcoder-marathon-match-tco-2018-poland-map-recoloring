@@ -353,7 +353,7 @@ public class MapRecoloringVis {
         char[] ch;
         for (int i = 0; i < H; ++i)
         for (int j = 0; j < W; ++j) {
-            ch = ("" + regions[i][j]).toCharArray();
+            ch = ("" + regions[i][j] + (newC ? " / " + getColor(newC, i, j) : "")).toCharArray();
             int h = i * SZ + SZ/2 + fm.getHeight()/2 - 2;
             g2.drawChars(ch, 0, ch.length, j * SZ + 2, h);
         }
