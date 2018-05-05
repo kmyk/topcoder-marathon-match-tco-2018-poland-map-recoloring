@@ -26,5 +26,5 @@ submit/full:
 score: a.out tester.jar
 	-rm score.txt
 	for seed in $$(seq 1 100) ; do java -jar tester.jar -exec ./a.out -novis -seed $$seed | tee /dev/stderr | grep '{"seed":' >> score.txt ; done
-	echo seed H W R C k skipped score HW HW/R iteration time | tr ' ' '\t'
-	cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C)\t\(.k)\t\(.skipped)\t\(.score)\t\(.H*.W)\t\(.H*.W/.R|floor)\t\(.iteration)\t\(.time)"'
+	echo seed H W R C0 C P Pc rawScore HW HW/R iteration time | tr ' ' '\t'
+	cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C0)\t\(.C)\t\(.P)\t\(.Pc)\t\(.rawScore)\t\(.H*.W)\t\(.H*.W/.R|floor)\t\(.iteration)\t\(.time)"'

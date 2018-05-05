@@ -104,70 +104,70 @@ vector<int> color_greedy(int R, vector<vector<int> > const & g, RandomEngine & g
     return color;
 }
 
-inline int get_k(vector<int> const & paint) {
+inline int get_C(vector<int> const & paint) {
     return *max_element(ALL(paint)) + 1;
 }
 
-int calculate_score_skipped(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
-    int skipped = 0;
+int calculate_Pc(int R, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+    int Pc = 0;
     REP (i, R) {
         if (paint[i] < MAX_C) {
-            skipped += old_color_count[i][paint[i]];
+            Pc += old_color_count[i][paint[i]];
         }
     }
-    return skipped;
+    return Pc;
 }
 
-void prepare_color_regin_lookup(int R, int k, vector<int> const & paint, vector<vector<int> > & lookup) {
-    lookup.resize(k);
-    REP (c, k) lookup[c].clear();
+void prepare_color_regin_lookup(int R, int C, vector<int> const & paint, vector<vector<int> > & lookup) {
+    lookup.resize(C);
+    REP (c, C) lookup[c].clear();
     REP (i, R) lookup[paint[i]].push_back(i);
 }
 
-vector<int> permute_paint(int R, int C, int k, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
+vector<int> permute_paint(int R, int C0, int C, vector<int> const & paint, vector<array<int, MAX_C> > const & old_color_count) {
     // prepare delta[i][j]; it is the delta of score if color i becomes color j
-    vector<array<int, MAX_C> > delta(k);
+    vector<array<int, MAX_C> > delta(C);
     REP (i, R) {
-        REP (j, C) {
+        REP (j, C0) {
             delta[paint[i]][j] += old_color_count[i][j];
         }
     }
     // try all permutations
-    vector<int> sigma(k);  // inverted
+    vector<int> sigma(C);  // inverted
     int highscore = INT_MIN;
     vector<int> tau;
     auto func = [&](int chosen) {
-        // permute C colors
-        REP (i, k) if (chosen & (1 << i)) {
+        // permute C0 colors
+        REP (i, C) if (chosen & (1 << i)) {
             tau.push_back(i);
         }
         do {
             int score = 0;
-            REP (i, C) {
+            REP (i, C0) {
                 score += delta[tau[i]][i];  // since tau is inverted here
             }
             if (highscore < score) {
-                if ((int)tau.size() < k) {
-                    REP (i, k) if (not (chosen & (1 << i))) {
+                if ((int)tau.size() < C) {
+                    REP (i, C) if (not (chosen & (1 << i))) {
                         tau.push_back(i);  // put remaining parts
                     }
                 }
                 highscore = score;
                 sigma = tau;
             }
-        } while (next_permutation(tau.begin(), tau.begin() + C));
+        } while (next_permutation(tau.begin(), tau.begin() + C0));
         tau.clear();
     };
-    // choose C colors from k colors
-    for (int x = (1 << C) - 1; x < (1 << k); ) {  // enumerate x \subseteq k s.t. |x| = C
+    // choose C0 colors from C colors
+    for (int x = (1 << C0) - 1; x < (1 << C); ) {  // enumerate x \subseteq C s.t. |x| = C0
         func(x);
         // update x
         int t = x | (x - 1);
         x = (t + 1) | (((~ t & - ~ t) - 1) >> (__builtin_ctz(x) + 1));
     }
     // apply tau = sigma^{-1}
-    tau.resize(k, -1);
-    REP (i, k) {
+    tau.resize(C, -1);
+    REP (i, C) {
         tau[sigma[i]] = i;
     }
     vector<int> npaint(R);
@@ -183,8 +183,8 @@ vector<int> permute_paint(int R, int C, int k, vector<int> const & paint, vector
  * @note return -1 if there are no paintable colors
  */
 template <class RandomEngine>
-int get_random_paintable_color(int r, int c, int k, vector<int> const & paint, vector<vector<int> > const & g, RandomEngine & gen) {
-    vector<bool> used(k);
+int get_random_paintable_color(int r, int c, int C, vector<int> const & paint, vector<vector<int> > const & g, RandomEngine & gen) {
+    vector<bool> used(C);
     if (c != -1) used[c] = true;
     for (int j : g[r]) {
         used[paint[j]] = true;
@@ -202,27 +202,27 @@ int get_random_paintable_color(int r, int c, int k, vector<int> const & paint, v
     return nc;
 }
 
-void remove_an_unused_color(int unused_c, int R, int & k, vector<int> & paint, vector<vector<int> > & lookup) {
+void remove_an_unused_color(int unused_c, int R, int & C, vector<int> & paint, vector<vector<int> > & lookup) {
     REP (r, R) {
         assert (paint[r] != unused_c);
         if (paint[r] > unused_c) paint[r] -= 1;
     }
-    REP3 (c, unused_c, k - 1) {
+    REP3 (c, unused_c, C - 1) {
         lookup[c].swap(lookup[c + 1]);
     }
     lookup.pop_back();
-    k -= 1;
+    C -= 1;
 }
 
-void remove_unused_colors(int R, int & k, vector<int> & paint, vector<vector<int> > & lookup) {
-    for (int c = 0; c < k; ++ c) {  // k may be modified in the loop
+void remove_unused_colors(int R, int & C, vector<int> & paint, vector<vector<int> > & lookup) {
+    for (int c = 0; c < C; ++ c) {  // C may be modified in the loop
         if (lookup[c].empty()) {
-            remove_an_unused_color(c, R, k, paint, lookup);
+            remove_an_unused_color(c, R, C, paint, lookup);
         }
     }
 }
 
-vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vector<int> const & old_colors) {
+vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vector<int> const & old_colors) {
     double clock_begin = rdtsc();
 
     // debug print
@@ -236,26 +236,26 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
     cerr << "H = " << H << endl;
     cerr << "W = " << W << endl;
     cerr << "R = " << R << endl;
-    cerr << "C = " << C << endl;
+    cerr << "C0 = " << C0 << endl;
 
     xor_shift_128 gen(42);
     vector<vector<int> > g = construct_graph(H, W, R, regions);
     vector<array<int, MAX_C> > old_color_count = count_old_colors(H * W, R, regions, old_colors);
 
     vector<int> paint = color_greedy(R, g, gen);
-    int k = get_k(paint);
-    int skipped = calculate_score_skipped(R, paint, old_color_count);
-    vector<vector<int> > lookup; prepare_color_regin_lookup(R, k, paint, lookup);
+    int C = get_C(paint);
+    int Pc = calculate_Pc(R, paint, old_color_count);
+    vector<vector<int> > lookup; prepare_color_regin_lookup(R, C, paint, lookup);
 
     vector<int> answer;
-    int answer_k = INT_MAX;
-    int answer_skipped = INT_MIN;
+    int answer_C = INT_MAX;
+    int answer_Pc = INT_MIN;
     auto update_answer = [&]() {
-        if (make_pair(- answer_k, answer_skipped) < make_pair(- k, skipped)) {
+        if (make_pair(- answer_C, answer_Pc) < make_pair(- C, Pc)) {
             answer = paint;
-            answer_k = k;
-            answer_skipped = skipped;
-            cerr << "k = " << answer_k << ", skipped = " << answer_skipped << endl;
+            answer_C = C;
+            answer_Pc = Pc;
+            cerr << "C = " << answer_C << ", Pc = " << answer_Pc << endl;
         }
     };
     update_answer();
@@ -270,21 +270,21 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
             iota(ALL(order), 0);
             shuffle(ALL(order), gen);
             for (int r : order) {
-                int nc = get_random_paintable_color(r, c, k, paint, g, gen);
+                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
                 if (nc != -1) {
                     paint[r] = nc;
                 }
             }
             // update
-            paint = permute_paint(R, C, k, paint, old_color_count);
-            skipped = calculate_score_skipped(R, paint, old_color_count);
-            prepare_color_regin_lookup(R, k, paint, lookup);
+            paint = permute_paint(R, C0, C, paint, old_color_count);
+            Pc = calculate_Pc(R, paint, old_color_count);
+            prepare_color_regin_lookup(R, C, paint, lookup);
 
         } else {
             // remove target color
             for (int i = 0; i < (int)lookup[c].size(); ++ i) {  // lookup[c].size() may be modified in the loop
                 int r = lookup[c][i];
-                int nc = get_random_paintable_color(r, c, k, paint, g, gen);
+                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
                 if (nc != -1) {
                     paint[r] = nc;
                     swap(lookup[c][i], lookup[c].back());
@@ -294,25 +294,26 @@ vector<int> solve(int H, int W, int R, int C, vector<int> const & regions, vecto
                 }
             }
         }
-        remove_unused_colors(R, k, paint, lookup);
+        remove_unused_colors(R, C, paint, lookup);
         update_answer();
     }
 
     // debug print
-    ll score = 100000ll * answer_k + H * W - answer_skipped;
-    cerr << "the number of color = " << k << endl;
-    cerr << "the sum of skipped = " << answer_skipped << endl;
-    cerr << "the raw score = " << score << endl;
+    ll score = 100000ll * answer_C + H * W - answer_Pc;
+    cerr << "color = " << C << endl;
+    cerr << "P^c = " << answer_Pc << endl;
+    cerr << "raw score = " << score << endl;
 #ifdef LOCAL
     if (seed != -1) {
         cerr << "{\"seed\":" << seed
              << ",\"H\":" << H
              << ",\"W\":" << W
              << ",\"R\":" << R
-             << ",\"C\":" << C
-             << ",\"k\":" << answer_k  // the number of color, smaller is better
-             << ",\"skipped\":" << answer_skipped  // the number of cells which skipped to paint, larger is better
-             << ",\"score\":" << score  // smaller is better
+             << ",\"C0\":" << C0
+             << ",\"C\":" << answer_C  // the number of color, smaller is better
+             << ",\"P\":" << H * W - answer_Pc  // the number of cells painted, smaller is better
+             << ",\"Pc\":" << answer_Pc
+             << ",\"rawScore\":" << score
              << ",\"iteration\":" << iteration
              << ",\"time\":" << rdtsc() - clock_begin
              << "}" << endl;
@@ -328,7 +329,7 @@ public:
     vector<int> recolor(int H, vector<int> regions, vector<int> oldColors) {
         int W = regions.size() / H;
         int R = *max_element(regions.begin(), regions.end()) + 1;
-        int C = *max_element(oldColors.begin(), oldColors.end()) + 1;
-        return solve(H, W, R, C, regions, oldColors);
+        int C0 = *max_element(oldColors.begin(), oldColors.end()) + 1;
+        return solve(H, W, R, C0, regions, oldColors);
     }
 };
