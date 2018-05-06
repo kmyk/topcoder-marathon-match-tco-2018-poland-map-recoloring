@@ -82,8 +82,8 @@ vector<array<int, MAX_C> > count_old_colors(int HW, int R, vector<int> const & r
  */
 uint32_t get_unpaintablity_array(int r, vector<int> const & paint, vector<vector<int> > const & g) {
     uint32_t used = 0;
-    for (int j : g[r]) {
-        used |= 1u << paint[j];
+    for (int r1 : g[r]) {
+        used |= 1u << paint[r1];
     }
     return used;
 }
@@ -110,7 +110,10 @@ vector<int> color_greedy(int R, vector<vector<int> > const & g, RandomEngine & g
     iota(ALL(order), 0);
     shuffle(ALL(order), gen);
     for (int r : order) {
-        uint32_t used = get_unpaintablity_array(r, paint, g);
+        uint32_t used = 0;
+        for (int r1 : g[r]) if (paint[r1] != -1) {
+            used |= 1u << paint[r1];
+        }
         paint[r] = __builtin_ctz(~ used);
     }
     return paint;
