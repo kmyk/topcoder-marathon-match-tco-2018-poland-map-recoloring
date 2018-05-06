@@ -274,7 +274,9 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             answer_C = C;
             answer_P = P;
             vector<int> freq = get_color_frequency(C, paint);
+#ifdef LOCAL
             cerr << "C = " << answer_C << ", P = " << answer_P << ", freq = (" << freq << ")" << endl;
+#endif
         }
     };
 
@@ -299,10 +301,10 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
 // cerr << "C = " << answer_C << ", P = " << answer_P << ", freq = (" << freq << ")" << endl;
         // modify a cell
         int r, prev_paint_r;
-        if (C >= 8) {
-            r = lookup[uniform_int_distribution<int>(0, lookup.size() - 1)(gen)];
-        } else if (C == 7 and R < R_LIMIT) {
-            r = lookup[uniform_int_distribution<int>(0, lookup.size() - 1)(gen)];
+        int lookup_index = -1;
+        if (C >= 8 or (C == 7 and R < R_LIMIT)) {
+            lookup_index = uniform_int_distribution<int>(0, lookup.size() - 1)(gen);
+            r = lookup[lookup_index];
         } else {
             r = uniform_int_distribution<int>(0, R - 1)(gen);
         }
@@ -350,13 +352,17 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             if (delta >= 0 or bernoulli_distribution(exp(delta / temperature))(gen)) {
                 P = next_P;
                 score = next_score;
-                if (prev_paint_r == C - 1) {
-                    int i = find(ALL(lookup), r) - lookup.begin();
-                    swap(lookup[i], lookup.back());
-                    lookup.pop_back();
-                }
-                if (paint[r] == C - 1) {
-                    lookup.push_back(r);
+                if (C >= 7 or R >= R_LIMIT) {
+                    if (prev_paint_r == C - 1) {
+                        if (lookup_index == -1 or lookup[lookup_index] != r) {
+                            lookup_index = find(ALL(lookup), r) - lookup.begin();
+                        }
+                        swap(lookup[lookup_index], lookup.back());
+                        lookup.pop_back();
+                    }
+                    if (paint[r] == C - 1) {
+                        lookup.push_back(r);
+                    }
                 }
             } else {
                 freq[prev_paint_r] += 1;
