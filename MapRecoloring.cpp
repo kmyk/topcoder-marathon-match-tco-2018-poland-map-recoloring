@@ -107,11 +107,16 @@ int calculate_P(int HW, int R, vector<int> const & paint, vector<array<int, MAX_
     return P;
 }
 
-pair<int, int> get_fewest_color(int C, vector<int> const & paint) {
+vector<int> get_color_frequency(int C, vector<int> const & paint) {
     vector<int> cnt(C);
     for (int c : paint) {
         cnt[c] += 1;
     }
+    return cnt;
+}
+
+pair<int, int> get_fewest_color(int C, vector<int> const & paint) {
+    vector<int> cnt = get_color_frequency(C, paint);
     int c = min_element(ALL(cnt)) - cnt.begin();
     return make_pair(c, cnt[c]);
 }
@@ -170,26 +175,28 @@ vector<int> permute_paint(int R, int C0, int C, vector<int> const & paint, vecto
 }
 
 /**
- * @param r is an index of a region
- * @param c is a forbidden color; ignored if -1
- * @note return -1 if there are no paintable colors
+ * @note C < 32 is required
  */
-template <class RandomEngine>
-int get_random_paintable_color(int r, int c, int C, vector<int> const & paint, vector<vector<int> > const & g, RandomEngine & gen) {
-    assert (C < 32);
+uint32_t get_unpaintablity_array(int r, vector<int> const & paint, vector<vector<int> > const & g) {
     uint32_t used = 0;
-    if (c != -1) used |= 1u << c;
     for (int j : g[r]) {
         used |= 1u << paint[j];
     }
-    int cnt = C - __builtin_popcount(used);
-    uint32_t unused = ~ used;
+    return used;
+}
+
+/**
+ * @note returned values are in [0, 32), or -1 if x = 0
+ */
+template <class RandomEngine>
+int get_random_bit(uint32_t x, RandomEngine & gen) {
+    int cnt = __builtin_popcount(x);
     if (cnt == 0) return -1;
-    int nth = uniform_int_distribution<int>(0, cnt - 1)(gen);
+    int i = uniform_int_distribution<int>(0, cnt - 1)(gen);
     while (true) {
-        int nc = unused & - unused;  // the lsb
-        if (nth -- == 0) return __builtin_ctz(nc);
-        unused &= ~ nc;
+        int lsb = x & - x;
+        if (i -- == 0) return __builtin_ctz(lsb);
+        x &= ~ lsb;
     }
 }
 
@@ -233,7 +240,9 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             answer = paint;
             answer_C = C;
             answer_P = P;
-            cerr << "C = " << answer_C << ", P = " << answer_P << endl;
+            vector<int> freq = get_color_frequency(C, paint);
+            sort(ALL(freq));
+            cerr << "C = " << answer_C << ", P = " << answer_P << ", freq = (" << freq << ")" << endl;
         }
     };
 
@@ -247,29 +256,34 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     vector<int> order(R);
     iota(ALL(order), 0);
     for (; t < 0.95 * TLE; ++ iteration) {
-        if (iteration % 100 == 0) t = rdtsc() - clock_begin;
+        if (iteration % 101 == 0) t = rdtsc() - clock_begin;
         double temperature = 1 - t / TLE;
+        int c = get_fewest_color(C, paint).first;
 
-        if (iteration % 10 != 0 and C <= 7) {
+        if (iteration % 11 != 0) {
             // modify a cell
             while (true) {
                 int r = uniform_int_distribution<int>(0, R - 1)(gen);
-                int nc = get_random_paintable_color(r, paint[r], C, paint, g, gen);
-                if (nc != -1) {
-                    paint[r] = nc;
-                    break;
-                }
+                uint32_t used = get_unpaintablity_array(r, paint, g);
+                used |= (1u << c);
+                used |= (1u << paint[r]);
+                used ^= (1u << C) - 1;
+                if (not used) continue;
+                paint[r] = get_random_bit(used, gen);
+                break;
             }
 
         } else {
             // shuffle non-target colors
-            int c = get_fewest_color(C, paint).first;
             shuffle(ALL(order), gen);
             for (int r : order) {
-                int nc = get_random_paintable_color(r, c, C, paint, g, gen);
-                if (nc != -1) {
-                    paint[r] = nc;
-                }
+                uint32_t used = get_unpaintablity_array(r, paint, g);
+                used |= (1u << c);
+                used |= (1u << paint[r]);
+                used ^= (1u << C) - 1;
+                if (not used) continue;
+                paint[r] = get_random_bit(used, gen);
+                break;
             }
         }
 
@@ -278,7 +292,9 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         int prev_C = C;
         int prev_P = P;
         remove_unused_colors(R, C, paint);
-        paint = permute_paint(R, C0, C, paint, old_color_count);
+        if (C <= 6 or iteration % 103 == 0) {
+            paint = permute_paint(R, C0, C, paint, old_color_count);
+        }
         P = calculate_P(H * W, R, paint, old_color_count);
         update_answer(paint, C, P);
         if (C == prev_C and C <= 7) {
@@ -296,7 +312,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     // debug print
     ll score = 100000ll * answer_C + answer_P;
     cerr << "color = " << C << endl;
-    cerr << "P^c = " << answer_P << endl;
+    cerr << "P = " << answer_P << endl;
     cerr << "raw score = " << score << endl;
 #ifdef LOCAL
     if (seed != -1) {
