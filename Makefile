@@ -23,8 +23,9 @@ submit:
 submit/full:
 	oj submit '${URL}' --language C++ ${PROBLEM}.cpp -y --open --full
 
-score: a.out tester.jar
+score.txt: a.out tester.jar
 	-rm score.txt
 	for seed in $$(seq 1 100) ; do java -jar tester.jar -exec ./a.out -novis -seed $$seed | tee /dev/stderr | grep '{"seed":' >> score.txt ; done
-	echo seed H W R C0 C P HW HW/R iteration time | tr ' ' '\t'
-	cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C0)\t\(.C)\t\(.P)\t\(.H*.W)\t\(.H*.W/.R|floor)\t\(.iteration)\t\(.time)"'
+
+score.txt/view:
+	{ echo seed H W R C0 C P HW HW/R iteration time | tr ' ' '\t' ; cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C0)\t\(.C)\t\(.P)\t\(.H*.W)\t\(.H*.W/.R|floor)\t\(.iteration)\t\(.time)"' ; } | sed 's/\t/\t| /g ; s/^/| / ; s/$$/\t|/' | expand -t 12 | sed '1 { p ; s/[^|]/-/g }'
