@@ -205,7 +205,7 @@ vector<int> permute_paint(int R, int C0, int C, vector<int> const & paint, vecto
     return npaint;
 }
 
-void remove_unused_colors(int R, int & C, vector<int> & paint) {
+int remove_unused_colors(int R, int C, vector<int> & paint) {
     while (true) {
         int c, cnt; tie(c, cnt) = get_fewest_color(C, paint);
         if (cnt) break;
@@ -215,6 +215,24 @@ void remove_unused_colors(int R, int & C, vector<int> & paint) {
         }
         C -= 1;
     }
+    return C;
+}
+
+double get_score(int C, int P, int C0, vector<int> const & freq) {
+    int cnt = 0;
+    REP3 (c, C0, C) cnt += freq[c];
+    cnt += freq.back();
+    return C * 1e5 + P + cnt * 0.1;
+}
+
+vector<int> list_target_regions(int R, int C, vector<int> const & paint) {
+    vector<int> lookup;
+    REP (r, R) {
+        if (paint[r] == C - 1) {
+            lookup.push_back(r);
+        }
+    }
+    return lookup;
 }
 
 vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vector<int> const & old_colors) {
@@ -253,8 +271,12 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
 
     vector<int> paint = color_greedy(R, g, gen);
     int C = get_C(paint);
+    paint = permute_paint(R, C0, C, paint, old_color_count);
     int P = calculate_P(H * W, R, paint, old_color_count);
     update_answer(paint, C, P);
+    vector<int> freq = get_color_frequency(C, paint);
+    vector<int> lookup = list_target_regions(R, C, paint);
+    double score = get_score(C, P, C0, freq);
 
     ll iteration = 0;
     double t = rdtsc() - clock_begin;
@@ -263,72 +285,80 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     for (; t < 0.95 * TLE; ++ iteration) {
         if (iteration % 101 == 0) t = rdtsc() - clock_begin;
         double temperature = 1 - t / TLE;
-        vector<int> freq = get_color_frequency(C, paint);
-        int c = min_element(ALL(freq)) - freq.begin();
-        freq[c] += R;
-        int nc = min_element(ALL(freq)) - freq.begin();
-        freq[c] -= R;
 
-        if (iteration % 11 != 0) {
-            // modify a cell
-            while (true) {
-                int r = uniform_int_distribution<int>(0, R - 1)(gen);
-                uint32_t used = get_unpaintablity_array(r, paint, g);
-                used |= (1u << c);
+        // modify a cell
+        int r, prev_paint_r;
+        while (true) {
+            int prob = uniform_int_distribution<int>(0, 9)(gen);
+            if (prob < 1) {
+                r = lookup[uniform_int_distribution<int>(0, lookup.size() - 1)(gen)];
+            } else if (prob < 2) {
+                r = lookup[uniform_int_distribution<int>(0, lookup.size() - 1)(gen)];
+                r = g[r][uniform_int_distribution<int>(0, g[r].size() - 1)(gen)];
+            } else {
+                r = uniform_int_distribution<int>(0, R - 1)(gen);
+            }
+            prev_paint_r = paint[r];
+            uint32_t used = get_unpaintablity_array(r, paint, g);
+            if (paint[r] != primary_color[r]
+                    and not (used & (1u << primary_color[r]))
+                    and bernoulli_distribution(0.5)(gen)) {
+                paint[r] = primary_color[r];
+            } else {
+                if (C >= 8 or bernoulli_distribution(0.9)(gen)) {
+                    used |= (1u << (C - 1));
+                }
                 used |= (1u << paint[r]);
                 used ^= (1u << C) - 1;
                 if (not used) continue;
                 paint[r] = get_random_bit(used, gen);
-                break;
             }
-
-        } else {
-            // shuffle non-target colors
-            shuffle(ALL(order), gen);
-            for (int r : order) {
-                uint32_t used = get_unpaintablity_array(r, paint, g);
-                if (not (used & (1u << primary_color[c])) and bernoulli_distribution(0.5)(gen)) {
-                    paint[r] = primary_color[c];
-                    continue;
-                }
-                used |= (1u << c);
-                used |= (1u << nc);
-                if (bernoulli_distribution(0.99)(gen)) {
-                    used |= (1u << paint[r]);
-                }
-                used ^= (1u << C) - 1;
-                if (not used) continue;
-                paint[r] = get_random_bit(used, gen);
-            }
+            break;
         }
+        assert (prev_paint_r != paint[r]);
 
         // update
-        vector<int> prev_paint = paint;
-        int prev_C = C;
-        int prev_P = P;
-        remove_unused_colors(R, C, paint);
-        if (C <= 6 or iteration % 10007 == 0) {
+        int next_C = remove_unused_colors(R, C, paint);  // destructive
+        assert (next_C <= C);
+        if (next_C < C) {
+            C = next_C;
             paint = permute_paint(R, C0, C, paint, old_color_count);
-        }
-        P = calculate_P(H * W, R, paint, old_color_count);
-        update_answer(paint, C, P);
-        if (C == prev_C and C <= 7) {
-            int delta = P - prev_P;
-            if (delta >= 0 or bernoulli_distribution(exp(0.1 * delta / temperature))(gen)) {
-                // nop
+            P = calculate_P(H * W, R, paint, old_color_count);
+            update_answer(paint, C, P);
+            score = get_score(C, P, C0, freq);
+            freq = get_color_frequency(C, paint);
+            lookup = list_target_regions(R, C, paint);
+        } else {
+            int next_P = calculate_P(H * W, R, paint, old_color_count);
+            update_answer(paint, next_C, next_P);
+            freq[prev_paint_r] -= 1;
+            freq[paint[r]] += 1;
+            double next_score = get_score(C, next_P, C0, freq);
+            double delta = score - next_score;
+            if (delta >= 0 or bernoulli_distribution(exp(0.01 * delta / temperature))(gen)) {
+                P = next_P;
+                score = next_score;
+                if (prev_paint_r == C - 1) {
+                    int i = find(ALL(lookup), r) - lookup.begin();
+                    swap(lookup[i], lookup.back());
+                    lookup.pop_back();
+                }
+                if (paint[r] == C - 1) {
+                    lookup.push_back(r);
+                }
             } else {
-                paint = prev_paint;
-                C = prev_C;
-                P = prev_P;
+                freq[prev_paint_r] += 1;
+                freq[paint[r]] -= 1;
+                paint[r] = prev_paint_r;
             }
         }
     }
 
     // debug print
-    ll score = 100000ll * answer_C + answer_P;
+    ll raw_score = 100000ll * answer_C + answer_P;
     cerr << "color = " << C << endl;
     cerr << "P = " << answer_P << endl;
-    cerr << "raw score = " << score << endl;
+    cerr << "raw score = " << raw_score << endl;
 #ifdef LOCAL
     if (seed != -1) {
         cerr << "{\"seed\":" << seed
@@ -338,7 +368,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
              << ",\"C0\":" << C0
              << ",\"C\":" << answer_C  // the number of color, smaller is better
              << ",\"P\":" << answer_P  // the number of cells painted, smaller is better
-             << ",\"rawScore\":" << score
+             << ",\"rawScore\":" << raw_score
              << ",\"iteration\":" << iteration
              << ",\"time\":" << rdtsc() - clock_begin
              << "}" << endl;
