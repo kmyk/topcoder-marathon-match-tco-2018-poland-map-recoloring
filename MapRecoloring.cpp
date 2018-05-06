@@ -231,7 +231,7 @@ vector<int> list_target_regions(int R, int C, vector<int> const & paint) {
     return lookup;
 }
 
-constexpr int R_LIMIT = 200;
+constexpr int R_LIMIT = 100;
 
 double get_score(int R, int C0, int C, int P, vector<int> const & freq) {
     if (C >= 8) {
