@@ -344,7 +344,9 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             freq = get_color_frequency(C, paint);
             lookup = list_target_regions(R, C, paint);
         } else {
-            int next_P = calculate_P(H * W, R, paint, old_color_count);
+            int next_P = P;
+            if (prev_paint_r < MAX_C) next_P += old_color_count[r][prev_paint_r];
+            if (paint[r]     < MAX_C) next_P -= old_color_count[r][paint[r]];
             update_answer(paint, next_C, next_P);
             freq[prev_paint_r] -= 1;
             freq[paint[r]] += 1;
