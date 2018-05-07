@@ -2055,6 +2055,10 @@ greedyは嘘っぽい。
 
 </details>
 
+諦めたことにより暇になったので順位表を取ってくるscriptを書いた: [#58: add new subcommand: get-standings](https://github.com/kmyk/online-judge-tools/commit/e8de084b0ff6a80837a2f012640171a71299eeb6)。
+markdownの表を手で整形してたの頭悪すぎるのだがしかし自動化するタイミングがなかった。
+ついでにやった他の修正含めて1時間ぐらいなのでさっさとしておけばよかった。
+
 ### 振り返り
 
 何も分からない。
