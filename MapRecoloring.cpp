@@ -35,15 +35,6 @@ private:
     uint32_t a, b, c, d;
 };
 
-template <typename Integer, class RandomEngine>
-inline Integer fast_uniform_int_distribution(Integer a, Integer b, RandomEngine & gen) {
-    return gen() % (b - a + 1) + a;
-}
-template <class RandomEngine>
-inline bool fast_bernoulli_distribution(double p, RandomEngine & gen) {
-    return (gen() & 0xffffff) < (p * 0xffffffff);
-}
-
 constexpr double ticks_per_sec = 2800000000;
 constexpr double ticks_per_sec_inv = 1.0 / ticks_per_sec;
 inline double rdtsc() { // in seconds
@@ -104,7 +95,7 @@ template <class RandomEngine>
 int get_random_bit(uint32_t x, RandomEngine & gen) {
     int cnt = __builtin_popcount(x);
     if (cnt == 0) return -1;
-    int i = fast_uniform_int_distribution<int>(0, cnt - 1, gen);
+    int i = uniform_int_distribution<int>(0, cnt - 1)(gen);
     while (true) {
         int lsb = x & - x;
         if (i -- == 0) return __builtin_ctz(lsb);
@@ -313,10 +304,10 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         int r, prev_paint_r;
         int lookup_index = -1;
         if (C > C_BASE or (C == C_BASE and R < R_LIMIT)) {
-            lookup_index = fast_uniform_int_distribution<int>(0, lookup.size() - 1, gen);
+            lookup_index = uniform_int_distribution<int>(0, lookup.size() - 1)(gen);
             r = lookup[lookup_index];
         } else {
-            r = fast_uniform_int_distribution<int>(0, R - 1, gen);
+            r = uniform_int_distribution<int>(0, R - 1)(gen);
         }
         while (true) {
             prev_paint_r = paint[r];
@@ -324,12 +315,12 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             if ((C < C_BASE or (C == C_BASE and R >= R_LIMIT))
                     and paint[r] != primary_color[r]
                     and not (used & (1u << primary_color[r]))
-                    and fast_bernoulli_distribution(0.5, gen)) {
+                    and bernoulli_distribution(0.5)(gen)) {
                 paint[r] = primary_color[r];
                 break;
             } else {
                 if (C > C_BASE) used |= (1u << (C - 1));
-                if (C == C_BASE and R < R_LIMIT and fast_bernoulli_distribution(0.9, gen)) used |= (1u << (C - 1));
+                if (C == C_BASE and R < R_LIMIT and bernoulli_distribution(0.9)(gen)) used |= (1u << (C - 1));
                 used |= (1u << paint[r]);
                 used ^= (1u << C) - 1;
                 if (used) {
@@ -337,7 +328,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
                     break;
                 }
             }
-            r = g[r][fast_uniform_int_distribution<int>(0, g[r].size() - 1, gen)];
+            r = g[r][uniform_int_distribution<int>(0, g[r].size() - 1)(gen)];
         }
         assert (prev_paint_r != paint[r]);
 
@@ -361,7 +352,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             freq[paint[r]] += 1;
             double next_score = get_score(R, C0, C, next_P, freq);
             double delta = score - next_score;
-            if (delta >= 0 or fast_bernoulli_distribution(exp(delta / temperature), gen)) {
+            if (delta >= 0 or bernoulli_distribution(exp(delta / temperature))(gen)) {
                 P = next_P;
                 score = next_score;
                 if (C >= 7 or R >= R_LIMIT) {
