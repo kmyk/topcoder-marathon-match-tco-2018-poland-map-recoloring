@@ -372,6 +372,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     cerr << "color = " << C << endl;
     cerr << "P = " << answer_P << endl;
     cerr << "raw score = " << raw_score << endl;
+    cerr << "iteration =  " << iteration << endl;
 #ifdef LOCAL
     if (seed != -1) {
         cerr << "{\"seed\":" << seed
