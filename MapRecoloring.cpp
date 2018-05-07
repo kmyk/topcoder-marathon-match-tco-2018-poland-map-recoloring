@@ -290,16 +290,15 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     vector<int> lookup = list_target_regions(R, C, paint);
     double score = get_score(R, C0, C, P, freq);
 
-    ll iteration = 0;
     double t = rdtsc() - clock_begin;
-    vector<int> order(R);
-    iota(ALL(order), 0);
+    double temperature = 1 - t / TLE;
+    ll iteration = 0;
     for (; t < 0.95 * TLE; ++ iteration) {
-        if (iteration % 101 == 0) t = rdtsc() - clock_begin;
-        double temperature = 1 - t / TLE;
+        if (iteration % 101 == 0) {
+            t = rdtsc() - clock_begin;
+            temperature = 1 - t / TLE;
+        }
 
-// if(iteration % 100000 == 0)
-// cerr << "C = " << answer_C << ", P = " << answer_P << ", freq = (" << freq << ")" << endl;
         // modify a cell
         int r, prev_paint_r;
         int lookup_index = -1;
@@ -312,8 +311,10 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         while (true) {
             prev_paint_r = paint[r];
             uint32_t used = get_unpaintablity_array(r, paint, g);
-            if (C > C_BASE) used |= (1u << (C - 1));
-            if (C == C_BASE and R < R_LIMIT and bernoulli_distribution(0.9)(gen)) used |= (1u << (C - 1));
+            if (C > C_BASE
+                    or (C == C_BASE and R < R_LIMIT and bernoulli_distribution(0.9)(gen))) {
+                used |= (1u << (C - 1));
+            }
             used |= (1u << paint[r]);
             used ^= (1u << C) - 1;
             if (used) {
@@ -322,7 +323,6 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             }
             r = g[r][uniform_int_distribution<int>(0, g[r].size() - 1)(gen)];
         }
-        assert (prev_paint_r != paint[r]);
 
         // update
         int next_C = remove_unused_colors(R, C, paint);  // destructive
@@ -347,7 +347,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
             if (delta >= 0 or bernoulli_distribution(exp(delta / temperature))(gen)) {
                 P = next_P;
                 score = next_score;
-                if (C >= 7 or R >= R_LIMIT) {
+                if (C > C_BASE or (C == C_BASE and R < R_LIMIT)) {
                     if (prev_paint_r == C - 1) {
                         if (lookup_index == -1 or lookup[lookup_index] != r) {
                             lookup_index = find(ALL(lookup), r) - lookup.begin();
