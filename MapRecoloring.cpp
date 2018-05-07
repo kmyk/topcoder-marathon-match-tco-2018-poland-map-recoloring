@@ -231,12 +231,13 @@ vector<int> list_target_regions(int R, int C, vector<int> const & paint) {
     return lookup;
 }
 
-constexpr int R_LIMIT = 100;
+constexpr int R_LIMIT = 0;
+constexpr int C_BASE = 7;
 
 double get_score(int R, int C0, int C, int P, vector<int> const & freq) {
-    if (C >= 8) {
+    if (C > C_BASE) {
         return freq.back() * 0.01;
-    } else if (C == 7 and R < R_LIMIT) {
+    } else if (C == C_BASE and R < R_LIMIT) {
         return freq.back() * 0.1;
     } else {
         return P * 0.05;
@@ -302,7 +303,7 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         // modify a cell
         int r, prev_paint_r;
         int lookup_index = -1;
-        if (C >= 8 or (C == 7 and R < R_LIMIT)) {
+        if (C > C_BASE or (C == C_BASE and R < R_LIMIT)) {
             lookup_index = uniform_int_distribution<int>(0, lookup.size() - 1)(gen);
             r = lookup[lookup_index];
         } else {
@@ -311,15 +312,15 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
         while (true) {
             prev_paint_r = paint[r];
             uint32_t used = get_unpaintablity_array(r, paint, g);
-            if ((C == 6 or (C == 7 and R >= R_LIMIT))
+            if ((C < C_BASE or (C == C_BASE and R >= R_LIMIT))
                     and paint[r] != primary_color[r]
                     and not (used & (1u << primary_color[r]))
                     and bernoulli_distribution(0.5)(gen)) {
                 paint[r] = primary_color[r];
                 break;
             } else {
-                if (C >= 8) used |= (1u << (C - 1));
-                if (C == 7 and R < R_LIMIT) if (bernoulli_distribution(0.9)(gen)) used |= (1u << (C - 1));
+                if (C > C_BASE) used |= (1u << (C - 1));
+                if (C == C_BASE and R < R_LIMIT and bernoulli_distribution(0.9)(gen)) used |= (1u << (C - 1));
                 used |= (1u << paint[r]);
                 used ^= (1u << C) - 1;
                 if (used) {
