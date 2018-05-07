@@ -303,8 +303,8 @@ vector<int> solve(int H, int W, int R, int C0, vector<int> const & regions, vect
     double t = rdtsc() - clock_begin;
     vector<int> order(R);
     iota(ALL(order), 0);
-    for (; t < 0.95 * TLE; ++ iteration) {
-        if (iteration % 101 == 0) t = rdtsc() - clock_begin;
+    for (; t < 0.96 * TLE; ++ iteration) {
+        if (iteration % 131072 == 0) t = rdtsc() - clock_begin;
         double temperature = 1 - t / TLE;
 
 // if(iteration % 100000 == 0)
