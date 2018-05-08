@@ -2234,12 +2234,20 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
 
 ### 5/8
 
--   <https://apps.topcoder.com/forums/?module=Thread&threadID=917504&start=7>
+-   <https://apps.topcoder.com/forums/?module=Thread&threadID=917504&start=0&mc=13#2265451>
     -   (C\_min / C\_your) * (P\_min / P\_your) とは言うけどつまり C * P を最小化すればいいよ
     -   それはそう
     -   今回も頭付いてなかった
+-   [Post Your Approach!](https://apps.topcoder.com/forums/?module=Thread&threadID=917681&start=0)
 -   atsT5515 さん (provisional 2位)
-    -   発言なし <https://twitter.com/ats5515>
+    -   <https://twitter.com/ats5515/status/993817688022466560>
+    -   制約の違反度で焼き鈍し でもなんだかよく分からず
+    -   <https://twitter.com/ats5515/status/993831960093933568>
+    -   これつまりbitsetかな
+    -   <https://twitter.com/ats5515/status/993832906337341442>
+    -   「色は基本的に6色で」 やはりそうかあ
+    -   <https://twitter.com/ats5515/status/993834321147445248>
+    -   これ意味あるのかな 大きめの妙な遷移だしあるのかも
 -   chokudai さん (provisional 3位)
     -   <https://twitter.com/chokudai/status/992857728484757505>
     -   <https://twitter.com/chokudai/status/993735416216875008>
@@ -2250,6 +2258,12 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
     -   最終的なエラーが0にならなかったら事故なのはそれはそう
     -   <https://twitter.com/chokudai/status/993745756996550661>
     -   <https://twitter.com/chokudai/status/993747037370773505>
+-   nika さん (provisional 5位)
+    -   <https://apps.topcoder.com/forums/?module=Thread&threadID=917681&start=0&mc=4#2265781>
+    -   「焼き鈍し」 以上のこと言ってないように読める
+-   machy さん (provisional 9位)
+    -   <https://apps.topcoder.com/forums/?module=Thread&threadID=917681&start=0&mc=4#2265905>
+    -   Kempe chainの名前を出してる
 -   tomerun さん (provisional 10位)
     -   <https://twitter.com/tomerun/status/993666114008768514>
     -   貪欲解 多点スタート 焼き鈍し
@@ -2258,6 +2272,8 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
     -   だいたい同じことやってる気がするがだめなの？
     -   <https://twitter.com/tomerun/status/993659486224068609>
     -   2割が6色らしい これか？
+    -   <https://twitter.com/tomerun/status/993851036879142912>
+    -   cloud便利分かる (今回はやってないが)
 -   colun さん (provisional 12位)
     -   <https://twitter.com/colun/status/993662931324747776>
     -   DFSしてから焼き鈍し
@@ -2267,9 +2283,21 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
 -   yowa さん (provisional 13位)
     -   <https://twitter.com/yowa/status/993661776376905728>
     -   ほぼ同じ。 近傍として追加で「隣接する2領域の色を(validなら)入れ替える」なのが差分か
+    -   <https://twitter.com/yowa/status/993859463164522498>
+    -   「毎度O(次数)」 あっ私も
+-   JacoCronje さん (provisional 14位)
+    -   <https://apps.topcoder.com/forums/?module=Thread&threadID=917681&start=0&mc=4#2265887>
 -   hakomo さん (provisional 15位)
-    -   発言なし <https://twitter.com/hakomof>
+    -   <https://twitter.com/hakomof/status/993815957410742272>
+    -   制約の違反度で山登りしその後焼き鈍し
+    -   <https://twitter.com/hakomof/status/993817242469978112>
+    -   現代人ぽい
+    -   <https://twitter.com/hakomof/status/993835527240482816>
+    -   色の置換の話ぽい 最小費用流が遅いのは自然
 -   kosakkun さん (provisional 19位)
+-   EvbCFfp1XB さん (provisional 31位)
+    -   [TCO2018 Poland Lightning Round MapRecoloring : EvbCFfp1XB](https://twitter.com/EvbCFfp1XB/status/993865933255991297)
+    -   初期解にbeam searchしてる それって効くのだろうか -> 下の方にgreedyにしたって書いてある
 -   iwashi31 さん (provisional 32位)
     -   <https://twitter.com/iwashi31/status/993690652054511617>
     -   わかる (わかる)
@@ -2281,9 +2309,17 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
     -   Welsh-Powell法とはつまり貪欲のことらしい
     -   <https://twitter.com/my316g/status/993712286136090624>
     -   調べてなかった 私はMM99の反省を生かせていない
+    -   <https://twitter.com/my316g/status/993846719367462912>
+    -   これどこのページだろう いくつかURLをguessingし試したがだめ TopCoder難しすぎる
 -   koyumeishi さん (provisional 41位)
     -   <https://twitter.com/koyumeishi_/status/993664672090898433>
     -   「原始人卒業」 私もいい加減に卒業しないと
+    -   <https://twitter.com/koyumeishi_/status/993660363924168705>
+    -   <https://twitter.com/koyumeishi_/status/993853067572363269>
+    -   DPまじ 私が全探索してしまった色の置換処理のことぽい
+    -   色数 C 初期の色数 C\_0 に対して bit-DP O(C C\_0 2^C\_0) か。
+        私の全探索は O(\binom(C, C\_0) C\_0!) 。
+        (C, C\_0) = (7, 5) の場合それぞれ 1120 と 2520 だし定数倍的にも bit-DP 有利か
 -   shamal さん (provisional 56位)
     -   [TopCoder Open 2018 MarathonMatch Poland Lightning Round メモ - shamal’s diary](http://shamal-ref.hatenablog.jp/entry/2018/05/08/134944)
     -   論文に従って焼き鈍し。 具体的にはchokudaiさん同様に制約の違反度の最小化。
@@ -2302,4 +2338,5 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
 1.  人為変数や罰金法の発想がなかった 線形計画法ちゃんと理解して
     -   でも実際正しいのかは分からないので後で確認するべき (しなさそう) chokudaiさんなら多少解法間違ってても3位になれてしまいそうなため
 1.  他にもある気がする
+    -   最適な色置換の計算が遅い
     -   だいたい似た解法なのに差が付いてるのなぜだろう
