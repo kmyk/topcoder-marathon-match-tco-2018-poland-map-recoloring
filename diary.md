@@ -2245,7 +2245,7 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
     -   <https://twitter.com/chokudai/status/993735416216875008>
     -   <https://twitter.com/chokudai/status/993742143456858112>
     -   「色が被った状態を許容して、ペナルティスコアつけて表現すること」
-    -   線形不等式など制約付きの線形計画問題ではよくやる手法だし気付くべきだった
+    -   線形計画問題の二段階simplex法の人為変数という形で知っていたので気付けてもよかった気がしないでもない
     -   <https://twitter.com/chokudai/status/993743086005043200>
     -   最終的なエラーが0にならなかったら事故なのはそれはそう
     -   <https://twitter.com/chokudai/status/993745756996550661>
@@ -2284,9 +2284,22 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
 -   koyumeishi さん (provisional 41位)
     -   <https://twitter.com/koyumeishi_/status/993664672090898433>
     -   「原始人卒業」 私もいい加減に卒業しないと
+-   shamal さん (provisional 56位)
+    -   [TopCoder Open 2018 MarathonMatch Poland Lightning Round メモ - shamal’s diary](http://shamal-ref.hatenablog.jp/entry/2018/05/08/134944)
+    -   論文に従って焼き鈍し。 具体的にはchokudaiさん同様に制約の違反度の最小化。
+    -   <https://twitter.com/shamal_ref/status/993658795820662784>
+    -   pdf: [\[1712.00709\] Simulated Annealing Algorithm for Graph Coloring](https://arxiv.org/abs/1712.00709)
+    -   四色定理から入ってしまったためこういう直接的な論文を探すの忘れてた
+    -   MCMC とか Metropolis Algorithm って言ってるのなに。
+        斜め読みした限りだと普通の焼き鈍しだが。
+        最後の行に "6) C++ is efficient in time but harder to code." ってあって一気に信用できなくなった。
+        問題が直接「k-彩色可能か決定せよ」だったらたしかに罰金法は自然なのかも。
 
 今回の敗因:
 
 1.  C * P を最小化すればよいことに気付いてなかった
-1.  slack変数の発想がなかった
-1.  他 不明
+    -   スタートラインにすら立ててないしだめすぎる 誤読が悪い
+1.  人為変数や罰金法の発想がなかった 線形計画法ちゃんと理解して
+    -   でも実際正しいのかは分からないので後で確認するべき (しなさそう) chokudaiさんなら多少解法間違ってても3位になれてしまいそうなため
+1.  他にもある気がする
+    -   だいたい似た解法なのに差が付いてるのなぜだろう
