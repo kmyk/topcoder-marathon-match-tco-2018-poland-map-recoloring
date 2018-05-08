@@ -31,4 +31,4 @@ score.txt/view:
 	{ echo seed H W R C0 C P HW HW/R iteration time | tr ' ' '\t' ; cat score.txt | jq -r '"\(.seed)\t\(.H)\t\(.W)\t\(.R)\t\(.C0)\t\(.C)\t\(.P)\t\(.H*.W)\t\(.H*.W/.R|floor)\t\(.iteration)\t\(.time)"' ; } | sed 's/\t/\t| /g ; s/^/| / ; s/$$/\t|/' | expand -t 12 | sed '1 { p ; s/[^|]/-/g }'
 
 standings:
-	oj get-standings '${URL}' --format=csv | tr ' ' '~' | sed ':1 ; s/,,/,-,/ ; t1 ; s/$$/,|/' | column -t -s , | sed 's/\( \+\)|\?/\1| /g ; s/^/| /' | tr '~' ' ' | sed '1 { p ; s/[^|]/-/g }'
+	oj get-standings '${URL}' --format=csv | sed 's/\w\w\.\w\w\.\w\w\w\w \w\w:\w\w:\w\w/& EST/ ; y/ /~/ ; :1 ; s/,,/,-,/ ; t1 ; s/$$/,|/' | column -t -s , | sed 's/\( \+\)|\?/\1| /g ; s/^/| / ; s/.$$// ; y/~/ / ; 1 { p ; s/[^|]/-/g }'
