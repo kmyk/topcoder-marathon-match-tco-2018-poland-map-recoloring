@@ -2264,6 +2264,8 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
 -   machy さん (provisional 9位)
     -   <https://apps.topcoder.com/forums/?module=Thread&threadID=917681&start=0&mc=4#2265905>
     -   Kempe chainの名前を出してる
+    -   [TCO Marathon Poland Lightning Round 参加記録 - 横道にそれるTopCoder参加記録でもいいじゃないか - TopCoder部](https://topcoder.g.hatena.ne.jp/machy3/20180508/1525784992)
+    -   海外の人だと思ってた
 -   tomerun さん (provisional 10位)
     -   <https://twitter.com/tomerun/status/993666114008768514>
     -   貪欲解 多点スタート 焼き鈍し
@@ -2295,6 +2297,15 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
     -   <https://twitter.com/hakomof/status/993835527240482816>
     -   色の置換の話ぽい 最小費用流が遅いのは自然
 -   kosakkun さん (provisional 19位)
+-   NobuMiu さん (provisional 20位)
+    -   <https://twitter.com/nico_shindannin/status/993659832589676544>
+    -   <https://twitter.com/nico_shindannin/status/993660818519613440>
+    -   論文から拾ってきたタブーサーチ
+    -   いい感じに塗っていくが衝突する場合は周囲の色を消す
+    -   頂点ごとな感じでタブーを持つ。 (マス, 色) の列がタブーリスト。 盤面全体のやつしか知らなかった
+    -   自然とKempe chainをなぞる感じになるのだろうか
+    -   [TopCoderでプログラムしてみた 第2386回 (TCO18 Marathon Lightning Round 反省会） - YouTube](https://www.youtube.com/watch?v=Mcmy9vno6BM)
+    -   t-SNEにも言及程度だが触れてる
 -   EvbCFfp1XB さん (provisional 31位)
     -   [TCO2018 Poland Lightning Round MapRecoloring : EvbCFfp1XB](https://twitter.com/EvbCFfp1XB/status/993865933255991297)
     -   初期解にbeam searchしてる それって効くのだろうか -> 下の方にgreedyにしたって書いてある
@@ -2330,6 +2341,10 @@ markdownの表を手で整形してたの頭悪すぎるのだがしかし自動
         斜め読みした限りだと普通の焼き鈍しだが。
         最後の行に "6) C++ is efficient in time but harder to code." ってあって一気に信用できなくなった。
         問題が直接「k-彩色可能か決定せよ」だったらたしかに罰金法は自然なのかも。
+-   TopCoder ID 不明 <https://twitter.com/daruma3940>
+    -   [MMLightinig2018にっき - daruma3940の日記](http://daruma3940.hatenablog.com/entry/2018/05/08/180744)
+    -   論文漁る方面のそれ
+    -   エネルギー関数って言っててchokudaiさん方針なのだけど
 
 今回の敗因:
 
